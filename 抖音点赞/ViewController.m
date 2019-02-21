@@ -7,8 +7,10 @@
 //
 
 #import "ViewController.h"
+#import "LZLikeView.h"
 
 @interface ViewController ()
+
 
 @end
 
@@ -16,7 +18,13 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // Do any additional setup after loading the view, typically from a nib.
+    self.view.backgroundColor = [UIColor blackColor];
+    
+    LZLikeView *likeView = [[LZLikeView alloc] initWithFrame:CGRectMake(100, 100, 100, 100)];
+    likeView.likeDuration = 0.5;
+    likeView.zanFillColor = [UIColor redColor];
+    [self.view addSubview:likeView];
+    
 }
 
 
