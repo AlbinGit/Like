@@ -11,6 +11,12 @@
 #define CCFavoriteViewLikeBeforeTag 1 //点赞
 #define CCFavoriteViewLikeAfterTag  2 //取消点赞
 
+@interface LZLikeView()
+
+@property (nonatomic ,assign) CGFloat length;
+
+@end
+
 @implementation LZLikeView
 
 - (id)initWithFrame:(CGRect)frame{
@@ -24,7 +30,6 @@
         [_likeBefore addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleGesture:)]];
         [self addSubview:_likeBefore];
         
-        
         _likeAfter = [[UIImageView alloc]initWithFrame:self.bounds];
         _likeAfter.contentMode = UIViewContentModeCenter;
         _likeAfter.image = [UIImage imageNamed:@"icon_home_like_after"];
@@ -33,6 +38,8 @@
         [_likeAfter setHidden:YES];
         [_likeAfter addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(handleGesture:)]];
         [self addSubview:_likeAfter];
+        
+        _length = 30;
     }
     return self;
 }
@@ -60,7 +67,6 @@
     
     if(isLike) {
         
-        CGFloat length = 30;
         CGFloat duration = self.likeDuration > 0? self.likeDuration :0.5f;
         
         for(int i=0;i<6;i++) {
@@ -69,8 +75,8 @@
             layer.fillColor = self.zanFillColor == nil?[UIColor redColor].CGColor: self.zanFillColor.CGColor;
             
             UIBezierPath *startPath = [UIBezierPath bezierPath];
-            [startPath moveToPoint:CGPointMake(-2, -length)];
-            [startPath addLineToPoint:CGPointMake(2, -length)];
+            [startPath moveToPoint:CGPointMake(-2, -_length)];
+            [startPath addLineToPoint:CGPointMake(2, -_length)];
             [startPath addLineToPoint:CGPointMake(0, 0)];
             layer.path = startPath.CGPath;
             layer.transform = CATransform3DMakeRotation(M_PI / 3.0f * i, 0.0, 0.0, 1.0);
@@ -88,9 +94,9 @@
             scaleAnim.duration = duration * 0.2f;
             
             UIBezierPath *endPath = [UIBezierPath bezierPath];
-            [endPath moveToPoint:CGPointMake(-2, -length)];
-            [endPath addLineToPoint:CGPointMake(2, -length)];
-            [endPath addLineToPoint:CGPointMake(0, -length)];
+            [endPath moveToPoint:CGPointMake(-2, -_length)];
+            [endPath addLineToPoint:CGPointMake(2, -_length)];
+            [endPath addLineToPoint:CGPointMake(0, -_length)];
             
             
             CABasicAnimation *pathAnim = [CABasicAnimation animationWithKeyPath:@"path"];
@@ -101,7 +107,7 @@
             [group setAnimations:@[scaleAnim, pathAnim]];
             [layer addAnimation:group forKey:nil];
         }
-        
+        [self createCircleAnimation];
         [_likeAfter setHidden:NO];
         _likeAfter.alpha = 0.0f;
         _likeAfter.transform = CGAffineTransformScale(CGAffineTransformMakeRotation(-M_PI/3*2), 0.5f, 0.5f);
@@ -136,5 +142,47 @@
                          }];
     }
 }
+
+- (void)createCircleAnimation{
+    //创建背景
+    CAShapeLayer *layer = [[CAShapeLayer alloc] init];
+    layer.position = _likeBefore.center;
+    layer.fillColor = [UIColor clearColor].CGColor;
+    layer.strokeColor = _zanFillColor?_zanFillColor.CGColor:[UIColor redColor].CGColor;
+    layer.lineWidth = 1;
+    
+    //设置笔画路径
+    UIBezierPath *bPath = [UIBezierPath bezierPathWithArcCenter:CGPointMake(0, 0) radius:_length startAngle:-M_PI_2 endAngle:-M_PI_2+M_PI*2 clockwise:YES];
+    layer.path = bPath.CGPath;
+    [self.layer addSublayer:layer];
+    
+    //使用动画组来解决圆圈从小到大 --> 消失
+    CAAnimationGroup *group = [CAAnimationGroup animation];
+    group.removedOnCompletion = NO;
+    group.fillMode = kCAFillModeForwards;//必须-->group.removedOnCompletion = NO;才生效
+    group.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
+    group.duration = _likeDuration*0.8;
+    
+    CABasicAnimation *scaleAnim = [CABasicAnimation animationWithKeyPath:@"transform.scale"];
+    scaleAnim.duration = _likeDuration*0.8*0.8;
+    scaleAnim.fromValue = @(0.0);
+    scaleAnim.toValue = @(1.0);
+    
+    CABasicAnimation *widthStarAnim = [CABasicAnimation animationWithKeyPath:@"lineWidth"];
+    widthStarAnim.beginTime = 0;
+    widthStarAnim.duration = _likeDuration*0.8*0.8;
+    widthStarAnim.fromValue = @(1);
+    widthStarAnim.toValue = @(3);
+    
+    CABasicAnimation *widthEndAnim = [CABasicAnimation animationWithKeyPath:@"lineWidth"];
+    widthEndAnim.beginTime = _likeDuration*0.8*0.8;
+    widthEndAnim.duration = _likeDuration*0.8*0.2;
+    widthEndAnim.fromValue = @(3);
+    widthEndAnim.toValue = @(0);
+    
+    [group setAnimations:@[scaleAnim,widthStarAnim,widthEndAnim]];
+    [layer addAnimation:group forKey:nil];
+}
+
 
 @end
